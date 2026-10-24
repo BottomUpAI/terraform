@@ -25,7 +25,11 @@ jobs:
   apply:
     name: "${{ github.ref == 'refs/heads/main' && inputs.apply && 'Apply' || 'Plan' }}"
     runs-on: ubuntu-latest
-    concurrency: "${{ github.repository }}"
+    # Applies queue in one group; each branch's plans get their own, so a new
+    # plan can't cancel a pending apply. Plans wait on the state lock instead.
+    concurrency:
+      group: "${{ github.repository }}-${{ (github.ref == 'refs/heads/main' && inputs.apply) && 'apply' || format('plan-{0}', github.ref) }}"
+      cancel-in-progress: ${{ !(github.ref == 'refs/heads/main' && inputs.apply) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
