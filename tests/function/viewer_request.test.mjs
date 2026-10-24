@@ -36,13 +36,26 @@ test("www root redirect", () => {
   assert.equal(res.headers.location.value, "https://bottomuplabs.ai/");
 });
 
+// The runtime passes query keys and values exactly as the client sent them,
+// still percent-encoded, so the redirect must not encode them again.
 test("www redirect keeps multi-value and encoded query parameters", () => {
   const res = handler(
     ev("www.bottomuplabs.ai", "/", {
-      tag: { value: "a", multiValue: [{ value: "a" }, { value: "b c" }] },
+      tag: { value: "a", multiValue: [{ value: "a" }, { value: "b%20c" }] },
     }),
   );
   assert.equal(res.headers.location.value, "https://bottomuplabs.ai/?tag=a&tag=b%20c");
+});
+
+test("www redirect does not re-encode already-encoded values", () => {
+  const res = handler(
+    ev("www.bottomuplabs.ai", "/about", {
+      q: { value: "a%2Fb%26c%3Dd" },
+      y: { value: "%C3%A9" },
+      s: { value: "a+b" },
+    }),
+  );
+  assert.equal(res.headers.location.value, "https://bottomuplabs.ai/about?q=a%2Fb%26c%3Dd&y=%C3%A9&s=a+b");
 });
 
 test("directory index rewrite", () => {
