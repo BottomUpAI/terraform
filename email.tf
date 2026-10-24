@@ -12,8 +12,8 @@ resource "aws_route53_record" "mx" {
   type    = "MX"
   ttl     = local.default_ttl
   records = [
-    "10 in1-smtp.messagingengine.com.",
-    "20 in2-smtp.messagingengine.com.",
+    "10 us1-smtp.messagingengine.com.",
+    "20 us2-smtp.messagingengine.com.",
   ]
 }
 

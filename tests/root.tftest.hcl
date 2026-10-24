@@ -33,7 +33,7 @@ run "email_records" {
   command = plan
 
   assert {
-    condition     = toset(aws_route53_record.mx.records) == toset(["10 in1-smtp.messagingengine.com.", "20 in2-smtp.messagingengine.com."])
+    condition     = toset(aws_route53_record.mx.records) == toset(["10 us1-smtp.messagingengine.com.", "20 us2-smtp.messagingengine.com."])
     error_message = "MX must point at Fastmail."
   }
 
