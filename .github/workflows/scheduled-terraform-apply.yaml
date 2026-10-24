@@ -1,0 +1,26 @@
+name: Scheduled Terraform Apply
+run-name: Scheduled Terraform Apply
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Every hour
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  setup:
+    name: "Setup"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+  terraform-apply:
+    name: "Terraform apply"
+    needs: [setup]
+    uses: ./.github/workflows/terraform-apply.yaml
+    with:
+      apply: true
