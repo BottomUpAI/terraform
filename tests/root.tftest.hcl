@@ -91,3 +91,53 @@ run "site_deploy_variables" {
     error_message = "The site repo needs SITE_BUCKET and SITE_DISTRIBUTION_ID."
   }
 }
+
+run "main_branch_rules" {
+  command = plan
+
+  assert {
+    condition     = toset(keys(github_repository_ruleset.main)) == toset(["terraform"])
+    error_message = "Only repos with CI get branch rules; site joins once it has checks."
+  }
+
+  assert {
+    condition = (
+      github_repository_ruleset.main["terraform"].enforcement == "active" &&
+      github_repository_ruleset.main["terraform"].conditions[0].ref_name[0].include == tolist(["~DEFAULT_BRANCH"])
+    )
+    error_message = "Rules must be enforced on the default branch."
+  }
+
+  assert {
+    condition = toset([
+      for c in github_repository_ruleset.main["terraform"].rules[0].required_status_checks[0].required_check : c.context
+    ]) == toset(["Format", "Test", "Plan / Plan"])
+    error_message = "main must require the Format, Test and Plan checks."
+  }
+
+  assert {
+    condition = alltrue([
+      for c in github_repository_ruleset.main["terraform"].rules[0].required_status_checks[0].required_check :
+      c.integration_id == 15368
+    ])
+    error_message = "Required checks must come from GitHub Actions, so nothing else can satisfy them."
+  }
+
+  assert {
+    condition = (
+      github_repository_ruleset.main["terraform"].rules[0].deletion &&
+      github_repository_ruleset.main["terraform"].rules[0].non_fast_forward &&
+      length(github_repository_ruleset.main["terraform"].rules[0].pull_request) == 1
+    )
+    error_message = "main must be undeletable, never force-pushed, and changed only through pull requests."
+  }
+
+  assert {
+    condition = (
+      length(github_repository_ruleset.main["terraform"].bypass_actors) == 1 &&
+      github_repository_ruleset.main["terraform"].bypass_actors[0].actor_type == "OrganizationAdmin" &&
+      github_repository_ruleset.main["terraform"].bypass_actors[0].bypass_mode == "pull_request"
+    )
+    error_message = "Only org admins may bypass, and only by merging a pull request."
+  }
+}
