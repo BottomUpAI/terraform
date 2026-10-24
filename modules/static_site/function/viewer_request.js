@@ -5,13 +5,15 @@
 //    since the S3 origin has no notion of a directory index.
 var APEX = "bottomuplabs.ai";
 
+// Keys and values arrive still percent-encoded, as the client sent them, so
+// they are joined back together as-is.
 function queryString(qs) {
   var parts = [];
   for (var key in qs) {
     var entry = qs[key];
     var values = entry.multiValue ? entry.multiValue : [entry];
     for (var i = 0; i < values.length; i++) {
-      parts.push(encodeURIComponent(key) + "=" + encodeURIComponent(values[i].value));
+      parts.push(key + "=" + values[i].value);
     }
   }
   return parts.length ? "?" + parts.join("&") : "";

@@ -40,6 +40,11 @@ h=$(headers "https://www.$DOMAIN/about?x=1")
 [[ $(header_of "$h" location) == "https://$DOMAIN/about?x=1" ]] || fail www-to-apex "location $(header_of "$h" location)"
 ok www-to-apex
 
+# 2b. Encoded query values pass through the redirect unchanged.
+h=$(headers "https://www.$DOMAIN/?q=a%20b%2Fc")
+[[ $(header_of "$h" location) == "https://$DOMAIN/?q=a%20b%2fc" ]] || fail www-query-encoding "location $(header_of "$h" location)"
+ok www-query-encoding
+
 # 3. Missing pages are real 404s, and carry the security headers.
 h=$(headers "https://$DOMAIN/definitely-missing-page")
 [[ $(status_of "$h") == 404 ]] || fail not-found "status $(status_of "$h")"
