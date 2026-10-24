@@ -1,0 +1,37 @@
+name: Dependabot Auto-Merge
+on: pull_request
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Assume IAM Role
+        id: assume-iam-role
+        uses: bitterbridge/github-actions/assume-iam-role@v0.0.55
+        with:
+          role-to-assume: ${{ vars.IAM_ROLE_TO_ASSUME }}
+
+      - name: Get GitHub Token
+        id: get-github-token
+        uses: bitterbridge/github-actions/get-github-token@v0.0.55
+        with:
+          github-app-id-secret-path: ${{ vars.APP_ID_SECRET_PATH }}
+          github-app-private-key-secret-path: ${{ vars.APP_PRIVATE_KEY_SECRET_PATH }}
+
+      - name: Dependabot Auto-Merge
+        id: dependabot-auto-merge
+        uses: bitterbridge/github-actions/dependabot-auto-merge@v0.0.55
+        with:
+          github-token: ${{ steps.get-github-token.outputs.github-token}}
+          package-ecosystems: '["github_actions", "terraform"]'
+          pull-request-id: ${{ github.event.pull_request.number }}

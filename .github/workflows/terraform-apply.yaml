@@ -1,0 +1,84 @@
+name: Apply/Plan Changes
+run-name: "${{ github.ref == 'refs/heads/main' && inputs.apply && 'Apply' || 'Plan' }}"
+
+on:
+  workflow_call:
+    inputs:
+      apply:
+        description: "Apply planned changes."
+        type: boolean
+        required: false
+        default: false
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply planned changes."
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  apply:
+    name: "${{ github.ref == 'refs/heads/main' && inputs.apply && 'Apply' || 'Plan' }}"
+    runs-on: ubuntu-latest
+    concurrency: "${{ github.repository }}"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Assume IAM Role
+        id: assume-iam-role
+        uses: bitterbridge/github-actions/assume-iam-role@v0.0.55
+        with:
+          role-to-assume: ${{ vars.IAM_ROLE_TO_ASSUME }}
+
+      - name: Get GitHub Token
+        id: get-github-token
+        uses: bitterbridge/github-actions/get-github-token@v0.0.55
+        with:
+          github-app-id-secret-path: ${{ vars.APP_ID_SECRET_PATH }}
+          github-app-private-key-secret-path: ${{ vars.APP_PRIVATE_KEY_SECRET_PATH }}
+
+      - name: Read Terraform Version
+        id: read-terraform-version
+        uses: bitterbridge/github-actions/read-terraform-version@v0.0.55
+
+      - name: Setup Terraform
+        id: setup-terraform
+        uses: bitterbridge/github-actions/setup-terraform@v0.0.55
+        with:
+          terraform-version: ${{ steps.read-terraform-version.outputs.terraform-version }}
+
+      - name: Terraform Init
+        id: terraform-init
+        uses: bitterbridge/github-actions/terraform-init@v0.0.55
+        with:
+          working-directory: '.'
+
+      - name: Terraform Validate
+        id: terraform-validate
+        uses: bitterbridge/github-actions/terraform-validate@v0.0.55
+        with:
+          working-directory: '.'
+
+      - name: Terraform Plan
+        id: terraform-plan
+        uses: bitterbridge/github-actions/terraform-plan@v0.0.55
+        env:
+          GITHUB_TOKEN: ${{ steps.get-github-token.outputs.github-token }}
+        with:
+          working-directory: '.'
+
+      - name: Terraform Apply
+        id: terraform-apply
+        uses: bitterbridge/github-actions/terraform-apply@v0.0.55
+        if: ${{ inputs.apply && steps.terraform-plan.outputs.plan-did-change == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.get-github-token.outputs.github-token }}
+        with:
+          working-directory: '.'
+          plan-file: ${{ steps.terraform-plan.outputs.plan-file }}
