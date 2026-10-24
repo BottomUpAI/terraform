@@ -16,6 +16,8 @@ npm test          # CloudFront function (node:test)
 terraform test    # module/root plan assertions with mock providers
 ```
 
+`scripts/verify-live.sh` checks the live site and DNS (redirects, 404s, security headers, geo restriction, nameservers, mail records). CI runs it after every apply and hourly.
+
 ## Bootstrap (one time)
 
 1. Apply with local state, which creates the state bucket `bottomupai.terraform` and the OIDC role.

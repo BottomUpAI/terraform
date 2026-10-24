@@ -25,7 +25,25 @@ jobs:
     with:
       apply: true
 
+  verify-live:
+    name: "Verify live"
+    needs: [terraform-apply]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Assume IAM Role
+        uses: bitterbridge/github-actions/assume-iam-role@v0.0.55
+        with:
+          role-to-assume: ${{ vars.IAM_ROLE_TO_ASSUME }}
+
+      - name: Verify live site and DNS
+        run: ./scripts/verify-live.sh
+        env:
+          AWS_REGION: us-east-1
+
   bump-version:
     name: "Bump version"
-    needs: [terraform-apply]
+    needs: [verify-live]
     uses: ./.github/workflows/bump-version.yaml
