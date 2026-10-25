@@ -28,8 +28,10 @@ resource "github_repository_ruleset" "main" {
   # Org admins can still merge a pull request whose checks can't pass, e.g.
   # when CI itself has lost access to AWS. They can't push to main directly.
   bypass_actors {
-    actor_type  = "OrganizationAdmin"
-    actor_id    = 1
+    actor_type = "OrganizationAdmin"
+    # GitHub stores no ID for this actor type and the provider reads it back
+    # as 0; any other value shows as drift on every plan.
+    actor_id    = 0
     bypass_mode = "pull_request"
   }
 
