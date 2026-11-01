@@ -3,6 +3,7 @@
 # A repo joins this map once it has CI; its value is the check names to require.
 locals {
   required_checks = {
+    site      = ["Static checks", "Browser tests", "Lighthouse"]
     terraform = ["Format", "Test", "Plan / Plan"]
   }
 
