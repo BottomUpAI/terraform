@@ -11,3 +11,9 @@ resource "github_actions_variable" "site_distribution_id" {
   variable_name = "SITE_DISTRIBUTION_ID"
   value         = module.site.distribution_id
 }
+
+resource "github_actions_variable" "site_deploy_role" {
+  repository    = "site"
+  variable_name = "SITE_DEPLOY_ROLE"
+  value         = aws_iam_role.site_deploy.arn
+}

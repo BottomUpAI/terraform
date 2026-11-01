@@ -101,8 +101,8 @@ run "main_branch_rules" {
   command = plan
 
   assert {
-    condition     = toset(keys(github_repository_ruleset.main)) == toset(["terraform"])
-    error_message = "Only repos with CI get branch rules; site joins once it has checks."
+    condition     = contains(keys(github_repository_ruleset.main), "terraform")
+    error_message = "The terraform repo must have branch rules."
   }
 
   assert {
@@ -144,5 +144,56 @@ run "main_branch_rules" {
       github_repository_ruleset.main["terraform"].bypass_actors[0].bypass_mode == "pull_request"
     )
     error_message = "Only org admins may bypass, and only by merging a pull request."
+  }
+}
+
+run "site_deploy_role" {
+  command = plan
+
+  assert {
+    condition = (
+      one(jsondecode(aws_iam_role.site_deploy.assume_role_policy).Statement).Principal.Federated ==
+      "arn:aws:iam::665449637458:oidc-provider/token.actions.githubusercontent.com"
+    )
+    error_message = "Only the GitHub OIDC provider may assume the site deploy role."
+  }
+
+  assert {
+    condition = (
+      one(jsondecode(aws_iam_role.site_deploy.assume_role_policy).Statement).Condition ==
+      {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          "token.actions.githubusercontent.com:sub" = "repo:BottomUpAI@345462692/site@1432185918:ref:refs/heads/main"
+        }
+      }
+    )
+    error_message = "The site deploy role must trust exactly BottomUpAI/site on main, by exact match."
+  }
+
+  assert {
+    condition = toset([
+      for s in jsondecode(aws_iam_role_policy.site_deploy.policy).Statement : jsonencode([sort(s.Action), s.Resource])
+      ]) == toset([
+      jsonencode([["s3:ListBucket"], "arn:aws:s3:::bottomuplabs.ai"]),
+      jsonencode([["s3:DeleteObject", "s3:PutObject"], "arn:aws:s3:::bottomuplabs.ai/*"]),
+      jsonencode([["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"], "arn:aws:cloudfront::123456789012:distribution/E000000000000"]),
+    ])
+    error_message = "The site deploy role may only list/put/delete in the site bucket and invalidate its distribution."
+  }
+
+  assert {
+    condition     = github_actions_variable.site_deploy_role.repository == "site"
+    error_message = "SITE_DEPLOY_ROLE goes to the site repo."
+  }
+
+  assert {
+    condition = (
+      toset(keys(github_repository_ruleset.main)) == toset(["site", "terraform"]) &&
+      toset([
+        for c in github_repository_ruleset.main["site"].rules[0].required_status_checks[0].required_check : c.context
+      ]) == toset(["Static checks", "Browser tests", "Lighthouse"])
+    )
+    error_message = "site's main must require Static checks, Browser tests and Lighthouse."
   }
 }
