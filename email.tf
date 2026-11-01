@@ -1,9 +1,9 @@
 # Fastmail, same records as Nathan's other Fastmail domains.
 
 variable "dmarc_policy" {
-  description = "DMARC TXT value. Start at p=none; tighten once Fastmail shows DKIM verified."
+  description = "DMARC TXT value. Quarantine since DKIM was verified; move to p=reject once the aggregate reports (to dmarc@, via the catch-all) stay clean."
   type        = string
-  default     = "v=DMARC1; p=none; adkim=r; aspf=r"
+  default     = "v=DMARC1; p=quarantine; rua=mailto:dmarc@bottomuplabs.ai; adkim=r; aspf=r"
 }
 
 resource "aws_route53_record" "mx" {

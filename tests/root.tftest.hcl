@@ -54,6 +54,11 @@ run "email_records" {
     condition     = aws_route53_record.dmarc.name == "_dmarc.bottomuplabs.ai"
     error_message = "DMARC record must exist."
   }
+
+  assert {
+    condition     = one(aws_route53_record.dmarc.records) == "v=DMARC1; p=quarantine; rua=mailto:dmarc@bottomuplabs.ai; adkim=r; aspf=r"
+    error_message = "DMARC must quarantine failing mail and send aggregate reports to dmarc@."
+  }
 }
 
 run "substack_off_by_default" {

@@ -76,6 +76,8 @@ mx=$(dig +short MX "$DOMAIN" | sort | xargs)
 ok mx
 dig +short TXT "$DOMAIN" | grep -qxF '"v=spf1 include:spf.messagingengine.com ?all"' || fail spf "no matching TXT record"
 ok spf
+dig +short TXT "_dmarc.$DOMAIN" | grep -q 'p=quarantine\|p=reject' || fail dmarc "policy is not quarantine or reject"
+ok dmarc
 dkim=$(dig +short CNAME "fm1._domainkey.$DOMAIN")
 [[ $dkim == "fm1.$DOMAIN.dkim.fmhosted.com." ]] || fail dkim "got: $dkim"
 ok dkim
