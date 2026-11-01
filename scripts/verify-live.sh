@@ -45,6 +45,14 @@ h=$(headers "https://www.$DOMAIN/?q=a%20b%2Fc")
 [[ $(header_of "$h" location) == "https://$DOMAIN/?q=a%20b%2fc" ]] || fail www-query-encoding "location $(header_of "$h" location)"
 ok www-query-encoding
 
+# 2c. The deployed site's pages are served (BottomUpAI/site; checked here too,
+# hourly, so a broken bucket or distribution shows up between deploys).
+for path in / /about/; do
+  code=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "https://$DOMAIN$path")
+  [[ $code == 200 ]] || fail "page $path" "status $code"
+  ok "page $path"
+done
+
 # 3. Missing pages are real 404s, and carry the security headers.
 h=$(headers "https://$DOMAIN/definitely-missing-page")
 [[ $(status_of "$h") == 404 ]] || fail not-found "status $(status_of "$h")"
