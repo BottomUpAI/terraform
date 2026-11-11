@@ -1,9 +1,9 @@
 # Subdomains served by GitHub Pages sites on Nathan's personal account. Each
 # repo's Pages settings carry the matching custom domain.
 #
-# The challenge record verifies bottomuplabs.ai for the ndouglas account
-# (github.com/settings/pages), so no other account's Pages site can claim one
-# of these subdomains (or any other) while it points at GitHub.
+# The challenge records verify bottomuplabs.ai for the ndouglas account and the
+# BottomUpAI organization (each one's Settings -> Pages), so no other account's
+# Pages site can claim one of these subdomains (or any other).
 
 locals {
   github_pages_owner = "ndouglas"
@@ -13,16 +13,26 @@ locals {
     resume = "resume"
   }
 
-  # From github.com/settings/pages -> bottomuplabs.ai.
-  github_pages_challenge = "c29ac8f306593dc2bb22d41e3700ab"
+  # Owner -> code, from that owner's Settings -> Pages -> bottomuplabs.ai.
+  github_pages_challenges = {
+    ndouglas   = "c29ac8f306593dc2bb22d41e3700ab"
+    BottomUpAI = "a74b38ad30be6a1a66203f53ae1112"
+  }
+}
+
+moved {
+  from = aws_route53_record.github_pages_challenge
+  to   = aws_route53_record.github_pages_challenge["ndouglas"]
 }
 
 resource "aws_route53_record" "github_pages_challenge" {
+  for_each = local.github_pages_challenges
+
   zone_id = aws_route53_zone.this.zone_id
-  name    = "_github-pages-challenge-${local.github_pages_owner}.${local.domain_name}"
+  name    = lower("_github-pages-challenge-${each.key}.${local.domain_name}")
   type    = "TXT"
   ttl     = local.default_ttl
-  records = [local.github_pages_challenge]
+  records = [each.value]
 }
 
 resource "aws_route53_record" "github_pages" {
