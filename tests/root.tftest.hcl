@@ -212,7 +212,7 @@ run "github_pages_subdomains" {
   }
 
   assert {
-    condition     = aws_route53_record.github_pages_challenge.name == "_github-pages-challenge-ndouglas.bottomuplabs.ai" && aws_route53_record.github_pages_challenge.type == "TXT"
-    error_message = "The GitHub Pages verification TXT record must exist for ndouglas."
+    condition     = aws_route53_record.github_pages_challenge["ndouglas"].name == "_github-pages-challenge-ndouglas.bottomuplabs.ai" && aws_route53_record.github_pages_challenge["BottomUpAI"].name == "_github-pages-challenge-bottomupai.bottomuplabs.ai"
+    error_message = "GitHub Pages verification TXT records must exist for ndouglas and BottomUpAI."
   }
 }
