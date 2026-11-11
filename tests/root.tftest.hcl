@@ -197,3 +197,22 @@ run "site_deploy_role" {
     error_message = "site's main must require Static checks, Browser tests and Lighthouse."
   }
 }
+
+run "github_pages_subdomains" {
+  command = plan
+
+  assert {
+    condition     = toset(keys(aws_route53_record.github_pages)) == toset(["arena", "resume"])
+    error_message = "Expected CNAMEs for arena and resume."
+  }
+
+  assert {
+    condition     = aws_route53_record.github_pages["arena"].name == "arena.bottomuplabs.ai" && tolist(aws_route53_record.github_pages["arena"].records) == tolist(["ndouglas.github.io."])
+    error_message = "arena must CNAME to ndouglas.github.io."
+  }
+
+  assert {
+    condition     = aws_route53_record.github_pages_challenge.name == "_github-pages-challenge-ndouglas.bottomuplabs.ai" && aws_route53_record.github_pages_challenge.type == "TXT"
+    error_message = "The GitHub Pages verification TXT record must exist for ndouglas."
+  }
+}
