@@ -53,6 +53,19 @@ for path in / /about/; do
   ok "page $path"
 done
 
+# 2d. GitHub Pages subdomains (github_pages.tf) serve over HTTPS. curl fails
+# on a certificate that doesn't cover the name, which HSTS makes fatal for
+# visitors too.
+for url in https://arena.$DOMAIN/ https://resume.$DOMAIN/resume.pdf; do
+  code=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "$url") || fail "pages $url" "no HTTPS response"
+  [[ $code == 200 ]] || fail "pages $url" "status $code"
+  ok "pages $url"
+done
+for owner in ndouglas bottomupai; do
+  dig +short TXT "_github-pages-challenge-$owner.$DOMAIN" | grep -q . || fail "pages-challenge $owner" "no TXT record"
+  ok "pages-challenge $owner"
+done
+
 # 3. Missing pages are real 404s, and carry the security headers.
 h=$(headers "https://$DOMAIN/definitely-missing-page")
 [[ $(status_of "$h") == 404 ]] || fail not-found "status $(status_of "$h")"
